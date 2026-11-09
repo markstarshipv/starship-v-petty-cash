@@ -1,0 +1,31 @@
+name: Unpack upload
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack app files
+        run: |
+          set -e
+          unzip -o petty-cash-upload.zip -d /tmp/unpack
+          rm -f petty-cash-upload.zip
+          TOP_COUNT=$(find /tmp/unpack -mindepth 1 -maxdepth 1 | wc -l)
+          TOP_ITEM=$(find /tmp/unpack -mindepth 1 -maxdepth 1 | head -n 1)
+          if [ "$TOP_COUNT" = "1" ] && [ -d "$TOP_ITEM" ]; then SRC="$TOP_ITEM"; else SRC=/tmp/unpack; fi
+          shopt -s dotglob
+          cp -a "$SRC"/. .
+          ls -la
+      - name: Commit files
+        run: |
+          git config user.name "markstarshipv"
+          git config user.email "mark@spurling.net"
+          git add -A
+          git status --short
+          git commit -m "Initial deploy"
+          git push
